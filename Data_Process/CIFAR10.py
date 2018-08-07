@@ -3,7 +3,7 @@
 import pickle
 import numpy as np
 import os
-
+import cv2
 
 class Readecifar10():
 
@@ -20,8 +20,8 @@ class Readecifar10():
         return image, label
 
     def load_cifar10(self):
-        image = []
-        label = []
+        images = []
+        labels = []
         for i in range(1):
             file_path = "data_batch_" + str(i + 1)
             cifar_file = os.path.join(self.dir_path, file_path)
@@ -29,14 +29,20 @@ class Readecifar10():
 
             if (len(data_image) == len(data_label)):
                 for i in range(len(data_image)):
-                    image.append(data_image[i])
+                    image_rgb=np.array(data_image[i]).reshape(3,1024)
+                    r=np.array(image_rgb[0]).reshape(32,32)
+                    g = np.array(image_rgb[1]).reshape(32, 32)
+                    b = np.array(image_rgb[2]).reshape(32, 32)
+                    image=cv2.merge([b,g,r])
+                    images.append(image)
                     label_hot=np.zeros(10)
                     label_hot[int(data_label[i])]=1
-                    label.append(label_hot)
+                    labels.append(label_hot)
 
-        return image, label
+        return images, labels
 
 
 if __name__ == '__main__':
     image, label = Readecifar10('/home/cheng/Data/cifar-10-batches-py').load_cifar10()
-    print(label)
+    print(np.array(image).shape)
+
