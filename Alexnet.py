@@ -16,6 +16,11 @@ def alexnet_layer():
     根据论文从第二个卷积开始数据分成两组，在这里使用一个GPU所以修改模型，只有一组。
     """
 
+
+    ###这里还有一个数据处理步骤
+
+
+
     with tf.name_scope('conv1') as scope:
         kernel = tf.Variable(net_data['conv1'][0], name='weights')
         conv = tf.nn.conv2d(distorted_image, kernel, [1, 4, 4, 1], padding='VALID')

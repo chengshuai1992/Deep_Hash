@@ -5,6 +5,7 @@ import numpy as np
 import os
 import cv2
 
+
 class Readecifar10():
 
     def __init__(self, dir_path, onehot=True):
@@ -29,20 +30,20 @@ class Readecifar10():
 
             if (len(data_image) == len(data_label)):
                 for i in range(len(data_image)):
-                    image_rgb=np.array(data_image[i]).reshape(3,1024)
-                    r=np.array(image_rgb[0]).reshape(32,32)
+                    image_rgb = np.array(data_image[i]).reshape(3, 1024)
+                    r = np.array(image_rgb[0]).reshape(32, 32)
                     g = np.array(image_rgb[1]).reshape(32, 32)
                     b = np.array(image_rgb[2]).reshape(32, 32)
-                    image=cv2.merge([b,g,r])
+                    image = cv2.merge([b, g, r])
                     images.append(image)
-                    label_hot=np.zeros(10)
-                    label_hot[int(data_label[i])]=1
-                    labels.append(label_hot)
+                    # label_hot=np.zeros(10)
+                    # label_hot[int(data_label[i])]=1
+                    # labels.append(label_hot)
+                    labels.append(int(data_label[i]))
 
         return images, labels
 
 
 if __name__ == '__main__':
     image, label = Readecifar10('/home/cheng/Data/cifar-10-batches-py').load_cifar10()
-    print(np.array(image).shape)
-
+    print(label[0])
