@@ -6,6 +6,7 @@ import tensorflow as tf
 import os
 import cv2
 
+####数据的预处理部分已经差不多完成了
 """
 输入文件队列：这里是处理文件输入并且最后把数据整理成一个batch
 tf.train.match_filenames_once试图读取多个文件 使用正则表达式获得文件名
@@ -21,6 +22,8 @@ config = {
     'match_files': "/home/cheng/Data/cifar-train_data/train-*",
     'width': 32,
     'height': 32,
+    'batch_size': 4,
+    'min_after_dequeue': 100,
 
 }
 
@@ -83,23 +86,44 @@ def reader_TFrecord():
     image_raw = tf.decode_raw(feature['image'], tf.uint8)
     image = tf.reshape(image_raw, [width, height, 3])
     label = tf.cast(feature['label'], tf.int32)
-
+    label = tf.one_hot(label, 10, 1, 0)
 
     return image, label
 
 
-if __name__ == '__main__':
-    #writer_TFrecord()
+def next_batch():
+    min_after_dequeue = config['min_after_dequeue']
+    batch_size = config['batch_size']
+    capacity = min_after_dequeue + 3 * batch_size
+
     image, label = reader_TFrecord()
+
+    image_batch, label_batch = tf.train.shuffle_batch([image, label], batch_size=batch_size,
+                                                      capacity=capacity, min_after_dequeue=min_after_dequeue)
+
+    return image_batch, label_batch
+
+
+def batch(sess):
+    ###这里要进行修改，传递一个数值，训练多少次，就要的到多大的数
+    image, label = next_batch()
     init = (tf.global_variables_initializer(), tf.local_variables_initializer())
+    coord = tf.train.Coordinator()
+    sess.run(init)
+    threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+    image, label = sess.run([image, label])
+    coord.request_stop()
+    coord.join(threads)
+    return image, label
+
+
+if __name__ == '__main__':
+    # writer_TFrecord()
+
     with tf.Session() as sess:
-        sess.run(init)
-        threads = tf.train.start_queue_runners(sess=sess)
-        image, label = sess.run([image, label])
-        print(image)
-        label_hot = np.zeros(10)
-        label_hot[int(label)] = 1
-        print(label_hot)
-        cv2.imshow('picture', image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        image, label = batch(sess)
+        print(label)
+        for i in range(4):
+            cv2.imshow("picture", image[i])
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
