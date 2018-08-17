@@ -17,13 +17,14 @@ tf.trian.string_input_producer 对文件列表创建输入队列
 config = {
     'original_file_dir': "/home/cheng/Data/cifar-10-batches-py/",
     'output_data_dir': "/home/cheng/Data/cifar-train_data/",
-    'num_shards': 1,
-    'instances_per_shard': 10000,
+    'num_shards': 10,
+    'instances_per_shard': 1000,
     'match_files': "/home/cheng/Data/cifar-train_data/train-*",
     'width': 32,
     'height': 32,
-    'batch_size': 4,
-    'min_after_dequeue': 100,
+    'batch_size': 1000,
+    'min_after_dequeue': 10
+    ,
 
 }
 
@@ -70,11 +71,14 @@ def writer_TFrecord():
             writer.close()
 
 
-def reader_TFrecord():
+def reader_TFrecord(filename_queue):
     width = config['width']
     height = config['height']
     files = tf.train.match_filenames_once(config['match_files'])
-    filename_queue = tf.train.string_input_producer(files, shuffle=False)
+    min_after_dequeue = config['min_after_dequeue']
+    batch_size = config['batch_size']
+    capacity = min_after_dequeue + 3 * batch_size
+    # filename_queue = tf.train.string_input_producer(files, shuffle=False)
     reader = tf.TFRecordReader()
     _, serialized_example = reader.read(filename_queue)
     feature = tf.parse_single_example(
@@ -87,43 +91,32 @@ def reader_TFrecord():
     image = tf.reshape(image_raw, [width, height, 3])
     label = tf.cast(feature['label'], tf.int32)
     label = tf.one_hot(label, 10, 1, 0)
-
-    return image, label
-
-
-def next_batch():
-    min_after_dequeue = config['min_after_dequeue']
-    batch_size = config['batch_size']
-    capacity = min_after_dequeue + 3 * batch_size
-
-    image, label = reader_TFrecord()
-
     image_batch, label_batch = tf.train.shuffle_batch([image, label], batch_size=batch_size,
                                                       capacity=capacity, min_after_dequeue=min_after_dequeue)
-
     return image_batch, label_batch
 
 
-def batch(sess):
-    ###这里要进行修改，传递一个数值，训练多少次，就要的到多大的数
-    image, label = next_batch()
+def next_batch(sess):
+    files = tf.train.match_filenames_once(config['match_files'])
+    filename_queue = tf.train.string_input_producer(files, shuffle=False)
+    image, label = reader_TFrecord(filename_queue)
+
     init = (tf.global_variables_initializer(), tf.local_variables_initializer())
     coord = tf.train.Coordinator()
+
     sess.run(init)
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
     image, label = sess.run([image, label])
+    print(label)
+
+    
     coord.request_stop()
     coord.join(threads)
-    return image, label
+# return image, label
 
 
 if __name__ == '__main__':
     # writer_TFrecord()
 
     with tf.Session() as sess:
-        image, label = batch(sess)
-        print(label)
-        for i in range(4):
-            cv2.imshow("picture", image[i])
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+        next_batch(sess)
