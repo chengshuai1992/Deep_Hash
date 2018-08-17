@@ -71,14 +71,12 @@ def writer_TFrecord():
             writer.close()
 
 
-def reader_TFrecord(filename_queue):
+def reader_TFrecord():
     width = config['width']
     height = config['height']
     files = tf.train.match_filenames_once(config['match_files'])
-    min_after_dequeue = config['min_after_dequeue']
-    batch_size = config['batch_size']
-    capacity = min_after_dequeue + 3 * batch_size
-    # filename_queue = tf.train.string_input_producer(files, shuffle=False)
+
+    filename_queue = tf.train.string_input_producer(files, shuffle=False)
     reader = tf.TFRecordReader()
     _, serialized_example = reader.read(filename_queue)
     feature = tf.parse_single_example(
@@ -91,32 +89,32 @@ def reader_TFrecord(filename_queue):
     image = tf.reshape(image_raw, [width, height, 3])
     label = tf.cast(feature['label'], tf.int32)
     label = tf.one_hot(label, 10, 1, 0)
-    image_batch, label_batch = tf.train.shuffle_batch([image, label], batch_size=batch_size,
-                                                      capacity=capacity, min_after_dequeue=min_after_dequeue)
-    return image_batch, label_batch
+
+    return image, label
 
 
-def next_batch(sess):
-    files = tf.train.match_filenames_once(config['match_files'])
-    filename_queue = tf.train.string_input_producer(files, shuffle=False)
-    image, label = reader_TFrecord(filename_queue)
+# def next_batch():
 
-    init = (tf.global_variables_initializer(), tf.local_variables_initializer())
-    coord = tf.train.Coordinator()
-
-    sess.run(init)
-    threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-    image, label = sess.run([image, label])
-    print(label)
-
-    
-    coord.request_stop()
-    coord.join(threads)
 # return image, label
 
 
 if __name__ == '__main__':
     # writer_TFrecord()
-
+    image, label = reader_TFrecord()
+    min_after_dequeue = config['min_after_dequeue']
+    batch_size = config['batch_size']
+    capacity = min_after_dequeue + 3 * batch_size
+    init = (tf.global_variables_initializer(), tf.local_variables_initializer())
+    coord = tf.train.Coordinator()
+    image_batch, label_batch = tf.train.shuffle_batch([image, label], batch_size=batch_size,
+                                                      capacity=capacity, min_after_dequeue=min_after_dequeue)
     with tf.Session() as sess:
-        next_batch(sess)
+
+        sess.run(init)
+        threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+        for i in range(2):
+            image, label = sess.run([image_batch, label_batch])
+            print(label)
+
+        coord.request_stop()
+        coord.join(threads)
