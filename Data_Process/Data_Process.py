@@ -22,9 +22,8 @@ config = {
     'match_files': "/home/cheng/Data/cifar-train_data/train-*",
     'width': 32,
     'height': 32,
-    'batch_size': 1000,
-    'min_after_dequeue': 10
-    ,
+    'batch_size': 10,
+    'min_after_dequeue': 10,
 
 }
 
@@ -93,21 +92,23 @@ def reader_TFrecord():
     return image, label
 
 
-# def next_batch():
+def next_batch(image, label):
+    min_after_dequeue = config['min_after_dequeue']
+    batch_size = config['batch_size']
+    capacity = min_after_dequeue + 3 * batch_size
+    image_batch, label_batch = tf.train.shuffle_batch([image, label], batch_size=batch_size,
+                                                      capacity=capacity, min_after_dequeue=min_after_dequeue)
 
-# return image, label
+    return image_batch, label_batch
 
 
 if __name__ == '__main__':
     # writer_TFrecord()
     image, label = reader_TFrecord()
-    min_after_dequeue = config['min_after_dequeue']
-    batch_size = config['batch_size']
-    capacity = min_after_dequeue + 3 * batch_size
+
     init = (tf.global_variables_initializer(), tf.local_variables_initializer())
     coord = tf.train.Coordinator()
-    image_batch, label_batch = tf.train.shuffle_batch([image, label], batch_size=batch_size,
-                                                      capacity=capacity, min_after_dequeue=min_after_dequeue)
+    image_batch, label_batch = next_batch(image, label)
     with tf.Session() as sess:
 
         sess.run(init)
@@ -115,6 +116,9 @@ if __name__ == '__main__':
         for i in range(2):
             image, label = sess.run([image_batch, label_batch])
             print(label)
-
+            for i in range(10):
+                cv2.imshow("picture", image[i])
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
         coord.request_stop()
         coord.join(threads)
