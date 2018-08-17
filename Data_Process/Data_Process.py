@@ -22,7 +22,7 @@ config = {
     'match_files': "/home/cheng/Data/cifar-train_data/train-*",
     'width': 32,
     'height': 32,
-    'batch_size': 10,
+    'batch_size': 1000,
     'min_after_dequeue': 10,
 
 }
@@ -42,8 +42,12 @@ def data_reshape():
     ### 这个函数的作用是对得到的原始图像数据进行多种变换。在这里现不做这部分工作。
     ### original_file_path=/home/cheng/Data/cifar-10-batches-py
     # 读取所有的数据
-    images, labels = CIFAR10.Readecifar10(config["original_file_dir"]).load_cifar10()
 
+    images, labels = CIFAR10.Readecifar10(config["original_file_dir"]).load_cifar10()
+    """
+    现在得到的数据是一个所有的数据的数据列表。如果要对数据进一步处理那么就要依次从数据列表中读取一个数据然后作六种不同形式的变换，
+    每取一个数据变换一次连同标签存放到链表中。
+    """
     return images, labels
 
 
@@ -75,7 +79,7 @@ def reader_TFrecord():
     height = config['height']
     files = tf.train.match_filenames_once(config['match_files'])
 
-    filename_queue = tf.train.string_input_producer(files, shuffle=False)
+    filename_queue = tf.train.string_input_producer(files, shuffle=True)
     reader = tf.TFRecordReader()
     _, serialized_example = reader.read(filename_queue)
     feature = tf.parse_single_example(
@@ -104,6 +108,7 @@ def next_batch(image, label):
 
 if __name__ == '__main__':
     # writer_TFrecord()
+
     image, label = reader_TFrecord()
 
     init = (tf.global_variables_initializer(), tf.local_variables_initializer())
@@ -116,9 +121,11 @@ if __name__ == '__main__':
         for i in range(2):
             image, label = sess.run([image_batch, label_batch])
             print(label)
+
             for i in range(10):
                 cv2.imshow("picture", image[i])
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
+            
         coord.request_stop()
         coord.join(threads)
