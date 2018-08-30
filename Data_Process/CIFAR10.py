@@ -36,9 +36,7 @@ class Readecifar10():
                     b = np.array(image_rgb[2]).reshape(32, 32)
                     image = cv2.merge([b, g, r])
                     images.append(image)
-                    # label_hot=np.zeros(10)
-                    # label_hot[int(data_label[i])]=1
-                    # labels.append(label_hot)
+
                     labels.append(int(data_label[i]))
 
         return images, labels

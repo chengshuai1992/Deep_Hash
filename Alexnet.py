@@ -1,3 +1,7 @@
+###这里是Alexnet网络结构
+###http://www.360doc.com/content/18/0429/06/36490684_749589931.shtml
+
+
 import tensorflow as tf
 import numpy as np
 
@@ -17,10 +21,10 @@ def alexnet_layer():
     """
 
 
-    ###这里还有一个数据处理步骤
+    ### 这里还有一个数据处理步骤
 
-
-
+    ### Conv1
+    ### Output 96, kernel 11, stride 4
     with tf.name_scope('conv1') as scope:
         kernel = tf.Variable(net_data['conv1'][0], name='weights')
         conv = tf.nn.conv2d(distorted_image, kernel, [1, 4, 4, 1], padding='VALID')

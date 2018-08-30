@@ -126,6 +126,6 @@ if __name__ == '__main__':
                 cv2.imshow("picture", image[i])
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
-            
+
         coord.request_stop()
         coord.join(threads)
