@@ -1,6 +1,6 @@
 # https://blog.csdn.net/zhq0808/article/details/78482266
 
-import CIFAR10
+import read_cifar10_data
 import numpy as np
 import tensorflow as tf
 import os
